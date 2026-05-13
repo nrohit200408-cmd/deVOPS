@@ -1,0 +1,33 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: 'Azure-Service-Connection'
+  appName: 'prg11'
+  keyVaultName: 'PRG11keyvault'
+
+steps:
+# 1️⃣ Fetch secrets from Azure Key Vault
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: $(azureSubscription)
+    KeyVaultName: $(keyVaultName)
+    SecretsFilter: '*'
+    RunAsPreJob: true
+
+# 2️⃣ Install dependencies
+- script: |
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+  displayName: 'Install Python dependencies'
+
+# 3️⃣ Deploy to PRG11 App Service
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: $(azureSubscription)
+    appName: $(appName)
+    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
